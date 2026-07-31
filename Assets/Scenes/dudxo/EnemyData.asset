@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac280e794403d0c4da6fec37a5418e7e, type: 3}
+  m_Name: EnemyData
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  enemyList:
+  - id: 0
+    enemyName: Zombie
+    speed: 1
+    damage: 1
+    delay: 150
+    hp: 10
+    monsterIcon: {fileID: 4801227835787818748, guid: 6e3c57d30186660489bc1d9af994b8e7, type: 3}
+  - id: 0
+    enemyName: SuperZombie
+    speed: 1
+    damage: 2
+    delay: 150
+    hp: 20
+    monsterIcon: {fileID: 4334783836991956000, guid: 962a5c1d7f0c6064da90c1251d1675f5, type: 3}
