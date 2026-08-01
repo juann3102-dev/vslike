@@ -15,14 +15,14 @@ MonoBehaviour:
   enemyList:
   - id: 0
     enemyName: Zombie
-    speed: 1
+    speed: 150
     damage: 1
     delay: 150
     hp: 10
     monsterIcon: {fileID: 4801227835787818748, guid: 6e3c57d30186660489bc1d9af994b8e7, type: 3}
-  - id: 0
+  - id: 1
     enemyName: SuperZombie
-    speed: 1
+    speed: 150
     damage: 2
     delay: 150
     hp: 20
