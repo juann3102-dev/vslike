@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerData
   playerInfo:
     hp: 50
-    autoDamage: 0
-    autoDelay: 0
+    autoDamage: 3
+    autoDelay: 50
     defaultBullets:
     - {fileID: 0}
     - {fileID: 0}

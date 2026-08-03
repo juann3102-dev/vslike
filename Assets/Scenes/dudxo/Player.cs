@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
@@ -9,6 +10,12 @@ public class Player : MonoBehaviour
     public int autoDamage;
     public int autoDelay;
     public Bullet[] defaultBullets;
+
+    private int currDelay;
+
+    private float knockBackDist = 0.2f;
+    public GameObject hitEffectPrefab;
+    public Transform hitPosition;
 
     public HPDisplay hpDisplay;
 
@@ -40,9 +47,41 @@ public class Player : MonoBehaviour
         
     }
 
+    void FixedUpdate()
+    {
+        currDelay++;
+        if(currDelay >= autoDelay)
+        {
+            AutoAttack();
+            currDelay = 0;
+        }
+    }
+
     public void TakeDamage(int damage)
     {
         hp -= damage;
         hpDisplay.UpdateHP(hp);
+
+        StartCoroutine(TakeDamageMove());
+    }
+
+    IEnumerator TakeDamageMove()
+    {
+        transform.Translate(Vector2.left * knockBackDist);
+        GameObject effect = Instantiate(hitEffectPrefab, hitPosition.position, Quaternion.identity);
+        Destroy(effect, 0.2f);
+        yield return new WaitForSeconds(0.2f);
+        transform.Translate(Vector2.right * knockBackDist);
+    }
+
+    void AutoAttack()
+    {
+        Enemy nearest = EnemyManager.Instance.GetNearest(this.transform.position);
+        if (nearest != null)
+        {
+            nearest.TakeDamage(autoDamage);
+            //Debug.Log($"{nearest.enemyName} 공격");
+        }
+        //Debug.Log("함수 호출");
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using TMPro;
 
 public class Enemy : MonoBehaviour
@@ -24,6 +25,10 @@ public class Enemy : MonoBehaviour
 
     private bool isMove = true;
     private bool isAttack = false;
+
+    private float knockBackDist = 0.2f;
+    public GameObject hitEffectPrefab;
+    public Transform hitPosition;
 
 
     public void Awake()
@@ -55,6 +60,10 @@ public class Enemy : MonoBehaviour
 
     }
 
+    public void Start()
+    {
+        EnemyManager.Instance.activeEnemy.Add(this);
+    }
 
 
     void FixedUpdate()
@@ -94,5 +103,31 @@ public class Enemy : MonoBehaviour
             Player.Instance.TakeDamage(damage);
             currDelay = 0;
         }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        this.hp -= damage;
+        if(this.hp <= 0)
+        {
+            Destroy(gameObject);
+        }
+        hpDisplay.UpdateHP(hp);
+
+        StartCoroutine(TakeDamageMove());
+    }
+
+    IEnumerator TakeDamageMove()
+    {
+        transform.Translate(Vector2.right * knockBackDist);
+        GameObject effect = Instantiate(hitEffectPrefab, hitPosition.position, Quaternion.identity);
+        Destroy(effect, 0.2f);
+        yield return new WaitForSeconds(0.2f);
+        transform.Translate(Vector2.left * knockBackDist);
+    }
+
+    private void OnDestroy()
+    {
+        EnemyManager.Instance.activeEnemy.Remove(this);
     }
 }
