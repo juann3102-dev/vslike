@@ -20,6 +20,10 @@ public class Player : MonoBehaviour
 
     public HPDisplay hpDisplay;
 
+    public GameObject sword;
+    public AudioSource audioSource;
+    public AudioClip swordClip;
+
     void Awake()
     {
         Application.targetFrameRate = 120;
@@ -40,6 +44,11 @@ public class Player : MonoBehaviour
         autoDelay = playerData.playerInfo.autoDelay;
         defaultBullets = new List<int>(playerData.playerInfo.defaultBulletsById);
         hpDisplay.UpdateHP(hp);
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
     }
 
     // Update is called once per frame
@@ -84,6 +93,8 @@ public class Player : MonoBehaviour
         if (nearest != null)
         {
             nearest.TakeDamage(autoDamage);
+            audioSource.PlayOneShot(swordClip);
+            Instantiate(sword);
             //Debug.Log($"{nearest.enemyName} 공격");
         }
         //Debug.Log("함수 호출");
