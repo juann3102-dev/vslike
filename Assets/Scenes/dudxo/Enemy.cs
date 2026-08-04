@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using TMPro;
 
+
 public class Enemy : MonoBehaviour
 {
     [SerializeField] private EnemyData enemyDataTable;
@@ -40,7 +41,7 @@ public class Enemy : MonoBehaviour
     public void Init(int eid)
     {
         this.id = eid;
-        Debug.Log(this.id);
+        //Debug.Log(this.id);
 
         EnemyInfo info = enemyDataTable.GetEnemyById(this.id);
 
@@ -55,11 +56,10 @@ public class Enemy : MonoBehaviour
             spriteRenderer.sprite = info.monsterIcon;
         }
 
-        Debug.Log($"[몬스터 생성] ID: {id} / 이름: {enemyName} / HP: {hp} / 공격력: {damage}");
+        //Debug.Log($"[몬스터 생성] ID: {id} / 이름: {enemyName} / HP: {hp} / 공격력: {damage}");
         hpDisplay.UpdateHP(hp);
 
     }
-
     public void Start()
     {
         EnemyManager.Instance.activeEnemy.Add(this);
@@ -120,10 +120,12 @@ public class Enemy : MonoBehaviour
     IEnumerator TakeDamageMove()
     {
         transform.Translate(Vector2.right * knockBackDist);
+        spriteRenderer.color = new Color(1.0f, 0.4f, 0.4f, 1.0f);
         GameObject effect = Instantiate(hitEffectPrefab, hitPosition.position, Quaternion.identity);
         Destroy(effect, 0.2f);
         yield return new WaitForSeconds(0.2f);
         transform.Translate(Vector2.left * knockBackDist);
+        spriteRenderer.color = Color.white;
     }
 
     private void OnDestroy()

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class EnemyManager : MonoBehaviour
 {
@@ -69,5 +70,15 @@ public class EnemyManager : MonoBehaviour
             }
         }
         return nearest;
+    }
+
+    public List<Enemy> GetNearestEnemies(Vector3 origin, int count)
+    {
+        // LINQ를 활용해 거리 순 정렬 후 count 개만큼 추출
+        return activeEnemy
+            .Where(enemy => enemy != null && enemy.gameObject.activeInHierarchy) 
+            .OrderBy(enemy => Vector3.Distance(origin, enemy.transform.position))  
+            .Take(count)
+            .ToList();
     }
 }

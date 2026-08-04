@@ -6,7 +6,7 @@ public struct PlayerInfo
     public int hp;
     public int autoDamage;
     public int autoDelay;
-    public Bullet[] defaultBullets;
+    public int[] defaultBulletsById;
 }
 
 [CreateAssetMenu(fileName = "PlayerData", menuName = "Scriptable Objects/PlayerData")]

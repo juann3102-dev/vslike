@@ -15,7 +15,7 @@ MonoBehaviour:
   bulletList:
   - id: 0
     attack: 5
-    targets: 1
+    targetCount: 1
   - id: 1
     attack: 3
-    targets: 3
+    targetCount: 1

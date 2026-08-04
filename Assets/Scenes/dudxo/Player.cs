@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour
 {
@@ -9,7 +10,7 @@ public class Player : MonoBehaviour
     public int hp;
     public int autoDamage;
     public int autoDelay;
-    public Bullet[] defaultBullets;
+    public List<int> defaultBullets;
 
     private int currDelay;
 
@@ -37,14 +38,17 @@ public class Player : MonoBehaviour
         hp = playerData.playerInfo.hp;
         autoDamage = playerData.playerInfo.autoDamage;
         autoDelay = playerData.playerInfo.autoDelay;
-        defaultBullets = playerData.playerInfo.defaultBullets;
+        defaultBullets = new List<int>(playerData.playerInfo.defaultBulletsById);
         hpDisplay.UpdateHP(hp);
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetMouseButtonDown(0))
+        {
+            BulletManager.Instance.FireBullet();
+        }
     }
 
     void FixedUpdate()

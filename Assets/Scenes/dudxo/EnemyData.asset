@@ -26,4 +26,4 @@ MonoBehaviour:
     damage: 2
     delay: 150
     hp: 20
-    monsterIcon: {fileID: 4334783836991956000, guid: 962a5c1d7f0c6064da90c1251d1675f5, type: 3}
+    monsterIcon: {fileID: 1344780287051860636, guid: aef9a4ab44c210643acbc0f819e12a39, type: 3}
