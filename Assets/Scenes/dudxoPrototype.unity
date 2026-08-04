@@ -914,6 +914,8 @@ MonoBehaviour:
   fireDelayText: {fileID: 492643481}
   fireDelay: 150
   currDelay: 0
+  audioSource: {fileID: 1214342261}
+  soundClip: {fileID: 8300000, guid: 38c37dabe259adb49bdf5230debd0340, type: 3}
 --- !u!82 &1214342261
 AudioSource:
   m_ObjectHideFlags: 0
@@ -926,7 +928,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0

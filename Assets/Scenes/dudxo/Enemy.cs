@@ -27,7 +27,7 @@ public class Enemy : MonoBehaviour
     private bool isMove = true;
     private bool isAttack = false;
 
-    private float knockBackDist = 0.2f;
+    private float knockBackDist = 0.1f;
     public GameObject hitEffectPrefab;
     public Transform hitPosition;
 
@@ -114,17 +114,17 @@ public class Enemy : MonoBehaviour
         }
         hpDisplay.UpdateHP(hp);
 
-        StartCoroutine(TakeDamageMove());
+        StartCoroutine(TakeDamageMove(damage));
     }
 
-    IEnumerator TakeDamageMove()
+    IEnumerator TakeDamageMove(int damage)
     {
-        transform.Translate(Vector2.right * knockBackDist);
+        transform.Translate(Vector2.right * knockBackDist * damage);
         spriteRenderer.color = new Color(1.0f, 0.4f, 0.4f, 1.0f);
         GameObject effect = Instantiate(hitEffectPrefab, hitPosition.position, Quaternion.identity);
         Destroy(effect, 0.2f);
         yield return new WaitForSeconds(0.2f);
-        transform.Translate(Vector2.left * knockBackDist);
+        transform.Translate(Vector2.left * knockBackDist * damage);
         spriteRenderer.color = Color.white;
     }
 

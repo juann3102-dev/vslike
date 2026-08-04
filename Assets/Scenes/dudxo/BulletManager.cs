@@ -22,6 +22,9 @@ public class BulletManager : MonoBehaviour
     public int fireDelay = 150;
     public int currDelay = 0;
 
+    public AudioSource audioSource; 
+    public AudioClip soundClip;
+
     void Awake()
     {
         if (Instance == null)
@@ -36,6 +39,11 @@ public class BulletManager : MonoBehaviour
 
     void Start()
     {
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
         origin = Player.Instance.defaultBullets;
 
         for(int i = 0; i < room; i++)
@@ -67,13 +75,15 @@ public class BulletManager : MonoBehaviour
     {
         if (!isFire) return;
 
-        for(int i = 0; i < room; i++)
+        audioSource.PlayOneShot(soundClip);
+        for (int i = 0; i < room; i++)
         {
             GameObject newBullet = Instantiate(bulletPrefab);
             newBullet.SetActive(false);
             newBullet.GetComponent<Bullet>().Init(cylinder[i]);
             newBullet.SetActive(true);
         }
+
 
         Reload();
         currDelay = 0;
