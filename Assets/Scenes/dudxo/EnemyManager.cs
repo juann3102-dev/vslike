@@ -11,6 +11,15 @@ public class EnemyManager : MonoBehaviour
     public static EnemyManager Instance;
     public List<Enemy> activeEnemy = new List<Enemy>();
 
+    [Header("Spawn Settings")]
+    [SerializeField] public int baseSpawnCount = 2;
+    [SerializeField] public float spawnIncreaseRate = 0.2f;
+    [SerializeField] public int spawnDelay = 250;
+    [SerializeField] private EnemyData enemyDataTable;
+    private int maxEnemyId;
+    private int currSpawnDelay;
+    private int currWave = 0;
+
     void Awake()
     {
         if (Instance == null)
@@ -21,18 +30,39 @@ public class EnemyManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        
+    }
+
+    void Start()
+    {
+        maxEnemyId = enemyDataTable.enemyList.Length;
+        currSpawnDelay = spawnDelay - 50;
     }
 
     private void Update()
     {
-        // 테스트용: 숫자키 1, 2, 3을 누르면 해당 ID의 몬스터 생성
+        // 테스트용: 숫자키 1, 2을 누르면 해당 ID의 몬스터 생성
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            SpawnEnemy(0); // 101번 ID 몬스터 생성
+            SpawnEnemy(0); 
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            SpawnEnemy(1); // 102번 ID 몬스터 생성
+            SpawnEnemy(1);         }
+    }
+
+    void FixedUpdate()
+    {
+        currSpawnDelay++;
+        if (currSpawnDelay >= spawnDelay)
+        {
+            int currSpawnCount = (int)(spawnIncreaseRate * currWave + baseSpawnCount);
+            for (int i = 0; i < currSpawnCount; i++) { 
+                SpawnEnemy(Random.Range(0, currSpawnCount));
+            }
+            currWave++;
+            currSpawnDelay = 0;
         }
     }
 
@@ -77,7 +107,7 @@ public class EnemyManager : MonoBehaviour
         // LINQ를 활용해 거리 순 정렬 후 count 개만큼 추출
         return activeEnemy
             .Where(enemy => enemy != null && enemy.gameObject.activeInHierarchy) 
-            .OrderBy(enemy => Vector3.Distance(origin, enemy.transform.position))  
+            .OrderBy(enemy => (enemy.transform.position - origin).sqrMagnitude)  
             .Take(count)
             .ToList();
     }

@@ -31,6 +31,9 @@ public class Enemy : MonoBehaviour
     public GameObject hitEffectPrefab;
     public Transform hitPosition;
 
+    public float[] damageWeight = new float[] { 0.5f, 0.75f, 1f };
+    private int currWeightIndex = 0;
+
 
     public void Awake()
     {
@@ -82,6 +85,7 @@ public class Enemy : MonoBehaviour
         if (currSpeed >= speed)
         {
             //transform.Translate(Vector2.left * stepsize);
+            currWeightIndex++;
             currSpeed = 0;
         }
         if (currSpeed >= speed - moveFrame && lastSpace.transform.position.x + 0.01f <= transform.position.x)
@@ -107,14 +111,15 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        this.hp -= damage;
+        int finalDamage = Mathf.RoundToInt(damage * damageWeight[currWeightIndex]);
+        this.hp -= finalDamage;
         if(this.hp <= 0)
         {
             Destroy(gameObject);
         }
         hpDisplay.UpdateHP(hp);
 
-        StartCoroutine(TakeDamageMove(damage));
+        StartCoroutine(TakeDamageMove(finalDamage));
     }
 
     IEnumerator TakeDamageMove(int damage)

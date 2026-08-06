@@ -54,6 +54,8 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (GameManager.Instance.isGameOver) return;
+
         if (Input.GetMouseButtonDown(0))
         {
             BulletManager.Instance.FireBullet();
@@ -76,6 +78,11 @@ public class Player : MonoBehaviour
         hpDisplay.UpdateHP(hp);
 
         StartCoroutine(TakeDamageMove());
+
+        if(hp <= 0)
+        {
+            GameManager.Instance.GameOver();
+        }
     }
 
     IEnumerator TakeDamageMove()

@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BulletData
   bulletList:
   - id: 0
-    attack: 5
+    attack: 6
     targetCount: 1
   - id: 1
     attack: 3
-    targetCount: 1
+    targetCount: 3
