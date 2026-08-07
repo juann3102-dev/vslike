@@ -7,9 +7,9 @@ public class Player : MonoBehaviour
     public static Player Instance;
 
     public PlayerData playerData;
-    public int hp;
-    public int autoDamage;
-    public int autoDelay;
+    private int hp;
+    private int autoDamage;
+    private int autoDelay;
     public List<int> defaultBullets;
 
     private int currDelay;

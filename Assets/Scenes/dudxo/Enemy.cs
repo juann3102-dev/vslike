@@ -9,9 +9,9 @@ public class Enemy : MonoBehaviour
 
     public int id;
     public string enemyName;
-    public int speed;
+    public int moveDelay;
     public int damage;
-    public int delay;
+    public int attackDelay;
     public int hp;
     public Sprite monsterIcon;
 
@@ -49,9 +49,9 @@ public class Enemy : MonoBehaviour
         EnemyInfo info = enemyDataTable.GetEnemyById(this.id);
 
         this.enemyName = info.enemyName;
-        this.speed = info.speed;
+        this.moveDelay = info.moveDelay;
         this.damage = info.damage;
-        this.delay = info.delay;
+        this.attackDelay = info.attackDelay;
         this.hp = info.hp;
 
         if(spriteRenderer != null && info.monsterIcon != null)
@@ -82,13 +82,13 @@ public class Enemy : MonoBehaviour
     void Move()
     {
         currSpeed++;
-        if (currSpeed >= speed)
+        if (currSpeed >= moveDelay)
         {
             //transform.Translate(Vector2.left * stepsize);
             currWeightIndex++;
             currSpeed = 0;
         }
-        if (currSpeed >= speed - moveFrame && lastSpace.transform.position.x + 0.01f <= transform.position.x)
+        if (currSpeed >= moveDelay - moveFrame && lastSpace.transform.position.x + 0.01f <= transform.position.x)
         {
             transform.Translate(Vector2.left * stepsize / moveFrame);
         }
@@ -102,7 +102,7 @@ public class Enemy : MonoBehaviour
     void Attack()
     {
         currDelay++;
-        if (currDelay >= delay)
+        if (currDelay >= attackDelay)
         {
             Player.Instance.TakeDamage(damage);
             currDelay = 0;

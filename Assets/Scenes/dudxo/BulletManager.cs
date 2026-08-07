@@ -20,7 +20,7 @@ public class BulletManager : MonoBehaviour
 
     private bool isFire = false;
     public int fireDelay = 150;
-    public int currDelay = 0;
+    private int currDelay = 0;
 
     public AudioSource audioSource; 
     public AudioClip soundClip;

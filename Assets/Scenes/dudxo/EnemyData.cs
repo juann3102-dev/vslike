@@ -5,9 +5,9 @@ public struct EnemyInfo
 {
     public int id;
     public string enemyName;
-    public int speed;
+    public int moveDelay;
     public int damage;
-    public int delay;
+    public int attackDelay;
     public int hp;
     public Sprite monsterIcon;
 }
