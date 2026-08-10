@@ -7,11 +7,18 @@ public class PlayerSC : MonoBehaviour
 {
     [Header("Data Source")]
     [SerializeField] private PlayerDataSC PlayerData; // ScriptableObject 원본 데이터
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private Color darkColor;
+    private float darkenFactor = 0.5f;
+    private Audios Audios; 
     private DeckManager DeckManager;
     private Enemy enemy;
+    private PlayerHP PlayerHP;
     public int bulletid;
     public float attackdamage;
     public bool isInputBlocked;
+    public bool isTakeDamage=false;
     public float penaltyWait = 1.25f;
     private float PlayerHp;
 
@@ -21,19 +28,31 @@ public class PlayerSC : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        spriteRenderer = GetComponent<SpriteRenderer>();
         DeckManager = GetComponent<DeckManager>();
+        Audios = GetComponent<Audios>();
+        PlayerHP = GetComponent<PlayerHP>();
         DeckManager.Initialize(PlayerData.PlayerList[0].Bullet_Setting);
         PlayerHp = PlayerData.PlayerList[0].HP;
+        originalColor = spriteRenderer.color;
         //if (attackCompo == null) attackCompo = GetComponent<Attack>();
     }
 
     private void Start()
     {
+        darkColor = new Color(
+            originalColor.r * darkenFactor,
+            originalColor.g * darkenFactor,
+            originalColor.b * darkenFactor,
+            originalColor.a
+        );
         penaltyWait = 1.25f;
+        PlayerHP.UIInitialize(PlayerHp);
+
     }
 
 
-    public void Update()
+public void Update()
     {
         if(isInputBlocked)
         {
@@ -67,15 +86,17 @@ public class PlayerSC : MonoBehaviour
             if (DeckManager.CylinderList.Count == 0)
             {
                 DeckManager.ReloadBullet();
+                Audios.PlayReload();
                 Debug.Log("재장전 중");
                 yield return new WaitForSeconds(1.25f);
             }
 
-            //Debug.Log
-            //    ("공격! 탕! \n 실린더 : " + DeckManager.CylinderList.Count + " 덱 : " + DeckManager.DeckList.Count + " 사용된 : " + DeckManager.UsedList.Count); ;
+            Debug.Log
+                ("공격! 탕! \n 실린더 : " + DeckManager.CylinderList.Count + " 덱 : " + DeckManager.DeckList.Count + " 사용된 : " + DeckManager.UsedList.Count); ;
             PlayerAttack();
+            Audios.PlayShot();
             DeckManager.ShotBullet();
-            yield return new WaitForSeconds(PlayerData.PlayerList[0].attack_magnification);
+            yield return new WaitForSeconds(PlayerData.PlayerList[0].Shot_Delay);
         }
         Debug.Log("게임이 종료되었습니다.");
     }
@@ -128,11 +149,30 @@ public class PlayerSC : MonoBehaviour
     public void Playertakedamage(float attackdamage)
     {
         PlayerHp -= attackdamage;
+        PlayerHP.UpdateHPBar(PlayerHp);
+        if (isTakeDamage == false)
+        {
+            StartCoroutine(Darken());
+        }
+    
         Debug.Log("플레이어 피격! (현재 체력 : " + PlayerHp + " ) ");
         if (PlayerHp <= 0)
         {
             Die();
         }
+    }
+
+    private IEnumerator Darken()
+    {
+        //isTakeDamage = true;
+        for (int i = 0; i < 2; i++)
+        {
+            spriteRenderer.color = darkColor;
+            yield return new WaitForSeconds(0.0625f);
+            spriteRenderer.color = originalColor;
+            yield return new WaitForSeconds(0.0625f);
+        }
+        //isTakeDamage = false;
     }
 
     public void Die()

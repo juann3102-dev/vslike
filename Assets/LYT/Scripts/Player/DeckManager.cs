@@ -7,9 +7,9 @@ public class DeckManager : MonoBehaviour
     //[SerializeField] private PlayerDataSC PlayerData;
     private static int cardtemp;
 
-    public static List<int> DeckList = new List<int>();
-    public static List<int> CylinderList = new List<int>();
-    public static List<int> UsedList = new List<int>();
+    public List<int> DeckList = new List<int>();
+    public List<int> CylinderList = new List<int>();
+    public List<int> UsedList = new List<int>();
 
     /*
     void Awake() //플레이어 데이터에서 총알 구성 받아오기
@@ -26,7 +26,7 @@ public class DeckManager : MonoBehaviour
     }
 
 
-    private static void DeckShuffle()
+    private void DeckShuffle()
     {
         for (int i = DeckList.Count-1; i >0; i--)
         {
@@ -79,7 +79,7 @@ public class DeckManager : MonoBehaviour
     }
 
     //사용된 총알에서 덱으로 이동
-    private static void UsedBullet()
+    private void UsedBullet()
     {
         while (UsedList.Count > 0)
         {

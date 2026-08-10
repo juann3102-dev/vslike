@@ -6,6 +6,9 @@ using UnityEngine.UIElements;
 public class Enemy : MonoBehaviour
 {
     //[SerializeField] private EnemyData EnemyData;
+
+    private EnemyHealth health;
+    private Audios Audios;
     private int randomRange;
     private EnemyInfo myData;
     private float currentHp;
@@ -13,6 +16,25 @@ public class Enemy : MonoBehaviour
     DeckManager DeckManager;
     public int bulletid;
     public float bulletdamage;
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private Color darkColor;
+    private float darkenFactor = 0.5f;
+
+
+    void Awake()
+    {
+        Audios = GetComponent<Audios>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        health = GetComponent<EnemyHealth>();
+        originalColor = spriteRenderer.color;
+        darkColor = new Color(
+            originalColor.r * darkenFactor,
+            originalColor.g * darkenFactor,
+            originalColor.b * darkenFactor,
+            originalColor.a
+        );
+    }
 
     public void Initialize(EnemyInfo info)
     {
@@ -20,6 +42,7 @@ public class Enemy : MonoBehaviour
         DeckManager = GetComponent<DeckManager>();
         DeckManager.Initialize(myData.Bullet_Setting);
         currentHp = myData.Enemy_HP;
+        health.UIInitialize(currentHp);
         //Debug.Log("나의 체력은 : " + myData.Enemy_HP);
     }
 
@@ -44,6 +67,7 @@ public class Enemy : MonoBehaviour
             if (DeckManager.CylinderList.Count == 0)
             {
                 DeckManager.ReloadBullet();
+                Audios.PlayReload();
                 Debug.Log("적 재장전 중");
                 yield return new WaitForSeconds(1.25f);
             }
@@ -51,6 +75,7 @@ public class Enemy : MonoBehaviour
             //Debug.Log
             //    ("공격! 탕! \n 실린더 : " + DeckManager.CylinderList.Count + " 덱 : " + DeckManager.DeckList.Count + " 사용된 : " + DeckManager.UsedList.Count); ;
             EnemyAttack();
+            Audios.PlayShot();
             DeckManager.ShotBullet();
             yield return new WaitForSeconds(myData.Enemy_Delay);
         }
@@ -73,12 +98,26 @@ public class Enemy : MonoBehaviour
     public void Enemytakedamage(float attackdamage)
     {
         currentHp -= attackdamage;
+        health.UpdateHPBar(currentHp);
+        StartCoroutine(Darken());
         Debug.Log("으앙 (현재 체력 : " + currentHp + " ) " );
         if(currentHp <= 0)
         {
             Die();
         }
     }
+
+    private IEnumerator Darken()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            spriteRenderer.color = darkColor;
+            yield return new WaitForSeconds(0.0625f);
+            spriteRenderer.color = originalColor;
+            yield return new WaitForSeconds(0.0625f);
+        }
+    }
+        //isT
 
     public void Die()
     {

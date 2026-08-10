@@ -15,7 +15,7 @@ MonoBehaviour:
   BulletList:
   - id: 0
     BulletName: NormalBullet
-    BulletDamage: 5
+    BulletDamage: 2.5
   - id: 1
     BulletName: HardBullet
     BulletDamage: 10
