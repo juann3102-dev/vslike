@@ -1,12 +1,13 @@
 using System;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 public class Enemy : MonoBehaviour
 {
     //[SerializeField] private EnemyData EnemyData;
-
+    [SerializeField] private Text BulletText;
     private EnemyHealth health;
     private Audios Audios;
     private int randomRange;
@@ -69,7 +70,9 @@ public class Enemy : MonoBehaviour
                 DeckManager.ReloadBullet();
                 Audios.PlayReload();
                 Debug.Log("적 재장전 중");
+                BulletText.text = $"Reloadig...";
                 yield return new WaitForSeconds(1.25f);
+                BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
             }
 
             //Debug.Log
@@ -77,6 +80,7 @@ public class Enemy : MonoBehaviour
             EnemyAttack();
             Audios.PlayShot();
             DeckManager.ShotBullet();
+            BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
             yield return new WaitForSeconds(myData.Enemy_Delay);
         }
         //Debug.Log("게임이 종료되었습니다.");

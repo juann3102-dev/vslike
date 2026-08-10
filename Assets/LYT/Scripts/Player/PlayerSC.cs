@@ -2,11 +2,13 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using Unity.VisualScripting;
+using UnityEngine.UI;
 
 public class PlayerSC : MonoBehaviour
 {
     [Header("Data Source")]
     [SerializeField] private PlayerDataSC PlayerData; // ScriptableObject 원본 데이터
+    [SerializeField] private Text BulletText;
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private Color darkColor;
@@ -88,7 +90,9 @@ public void Update()
                 DeckManager.ReloadBullet();
                 Audios.PlayReload();
                 Debug.Log("재장전 중");
+                BulletText.text = $"Reloadig";
                 yield return new WaitForSeconds(1.25f);
+                BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
             }
 
             Debug.Log
@@ -96,6 +100,7 @@ public void Update()
             PlayerAttack();
             Audios.PlayShot();
             DeckManager.ShotBullet();
+            BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
             yield return new WaitForSeconds(PlayerData.PlayerList[0].Shot_Delay);
         }
         Debug.Log("게임이 종료되었습니다.");
