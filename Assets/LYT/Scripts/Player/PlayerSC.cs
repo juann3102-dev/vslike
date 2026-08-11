@@ -19,10 +19,13 @@ public class PlayerSC : MonoBehaviour
     private Enemy targetEnemy;
     private PlayerHP playerHP;
     private Coroutine attackCoroutine;
+    private Coroutine penaltyCoroutine;
     private bool isAttacking;
+    private bool isInputBlocked;
     private bool isTakingDamage;
     private bool isDead;
     private float playerHp;
+    private float maxPlayerHp;
 
     public static PlayerSC Instance { get; private set; }
     public float CurrentHp => playerHp;
@@ -51,7 +54,8 @@ public class PlayerSC : MonoBehaviour
 
         PlayerDataSC.PlayerInfo playerInfo = PlayerData.PlayerList[0];
         deckManager.Initialize(playerInfo.Bullet_Setting);
-        playerHp = playerInfo.HP;
+        maxPlayerHp = Mathf.Max(0f, playerInfo.HP);
+        playerHp = maxPlayerHp;
 
         if (spriteRenderer != null)
         {
@@ -72,14 +76,24 @@ public class PlayerSC : MonoBehaviour
 
     private void Update()
     {
-        if (isDead || isAttacking || GameManager.Instance == null ||
-            GameManager.Instance.EndGameCh || GameManager.Instance.PenaltyCh)
+        if (isDead || isAttacking || isInputBlocked || GameManager.Instance == null)
         {
             return;
         }
 
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
+            if (GameManager.Instance.PenaltyCh)
+            {
+                penaltyCoroutine = StartCoroutine(PenaltyRoutine());
+                return;
+            }
+
+            if (GameManager.Instance.EndGameCh)
+            {
+                return;
+            }
+
             isAttacking = true;
             attackCoroutine = StartCoroutine(AttackLoop());
         }
@@ -132,13 +146,26 @@ public class PlayerSC : MonoBehaviour
 
     public void PrepareForStage()
     {
-        StopCombat();
+        StopAttack();
         targetEnemy = null;
         deckManager.PrepareForNextStage();
         UpdateBulletText();
     }
 
     public void StopCombat()
+    {
+        StopAttack();
+
+        if (penaltyCoroutine != null)
+        {
+            StopCoroutine(penaltyCoroutine);
+            penaltyCoroutine = null;
+        }
+
+        isInputBlocked = false;
+    }
+
+    private void StopAttack()
     {
         if (attackCoroutine != null)
         {
@@ -149,9 +176,31 @@ public class PlayerSC : MonoBehaviour
         isAttacking = false;
     }
 
+    private IEnumerator PenaltyRoutine()
+    {
+        isInputBlocked = true;
+        yield return new WaitForSeconds(penaltyWait);
+        isInputBlocked = false;
+        penaltyCoroutine = null;
+    }
+
     public void AddBulletToDeck(int bulletId)
     {
         deckManager.AddBullet(bulletId);
+    }
+
+    public void RestoreFullHealth()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        playerHp = maxPlayerHp;
+        if (playerHP != null)
+        {
+            playerHP.UpdateHPBar(playerHp);
+        }
     }
 
     public void changetarget()

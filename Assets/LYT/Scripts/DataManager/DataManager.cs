@@ -66,7 +66,7 @@ public class DataManager : MonoBehaviour
         List<BulletDataSC.BulletInfo> choices =
             new List<BulletDataSC.BulletInfo>();
 
-        int choiceCount = Mathf.Min(requestedCount, available.Count);
+        int choiceCount = Mathf.Max(0, requestedCount);
         while (choices.Count < choiceCount)
         {
             BulletRarity rarity = DrawAvailableRarity(available);
@@ -81,7 +81,6 @@ public class DataManager : MonoBehaviour
             BulletDataSC.BulletInfo selected =
                 rarityPool[Random.Range(0, rarityPool.Count)];
             choices.Add(selected);
-            available.Remove(selected);
         }
 
         return choices;

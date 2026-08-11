@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c998589d12908c447b9377b668cb8518, type: 3}
+  m_Name: Stage Data
+  m_EditorClassIdentifier: Assembly-CSharp::StageDataSC
+  StageList:
+  - StageNumber: 1
+    MaxEnemyId: 0
+    SpawnCount: 1
+    EnemyHpMultiplier: 1
+    EnemyDamageMultiplier: 1
+  - StageNumber: 2
+    MaxEnemyId: 0
+    SpawnCount: 2
+    EnemyHpMultiplier: 1
+    EnemyDamageMultiplier: 1
+  - StageNumber: 3
+    MaxEnemyId: 1
+    SpawnCount: 2
+    EnemyHpMultiplier: 1.1
+    EnemyDamageMultiplier: 1
+  - StageNumber: 4
+    MaxEnemyId: 1
+    SpawnCount: 3
+    EnemyHpMultiplier: 1.2
+    EnemyDamageMultiplier: 1.05
+  - StageNumber: 5
+    MaxEnemyId: 1
+    SpawnCount: 3
+    EnemyHpMultiplier: 1.3
+    EnemyDamageMultiplier: 1.1
+  MaxAutoSpawnCount: 3
+  HpGrowthPerStage: 0.08
+  DamageGrowthPerStage: 0.04

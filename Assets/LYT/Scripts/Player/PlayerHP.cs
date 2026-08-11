@@ -18,14 +18,13 @@ public class PlayerHP : MonoBehaviour
         UpdateHPBar(currentHealth);
     }
 
-
     public void UpdateHPBar(float currentHP)
     {
         HPtext.text = $"{currentHP} / {maxHealth}";
+
         if (hpFillImage != null)
         {
             hpFillImage.fillAmount = currentHP / maxHealth;
         }
     }
-
 }

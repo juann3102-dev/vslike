@@ -72,21 +72,28 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator StartRun()
     {
-        if (countdownText != null)
-        {
-            countdownText.gameObject.SetActive(true);
-            for (int i = Mathf.Max(0, countdown); i > 0; i--)
-            {
-                countdownText.text = i.ToString();
-                yield return new WaitForSeconds(1f);
-            }
+        yield return StartCoroutine(ShowCountdownAndBeginStage());
+    }
 
-            countdownText.text = "START!";
-            yield return new WaitForSeconds(0.3f);
-            countdownText.gameObject.SetActive(false);
+    private IEnumerator ShowCountdownAndBeginStage()
+    {
+        if (countdownText == null)
+        {
+            BeginStage();
+            yield break;
         }
 
+        countdownText.gameObject.SetActive(true);
+        for (int i = Mathf.Max(0, countdown); i > 0; i--)
+        {
+            countdownText.text = i.ToString();
+            yield return new WaitForSeconds(1f);
+        }
+
+        countdownText.text = "START!";
         BeginStage();
+        yield return new WaitForSeconds(0.3f);
+        countdownText.gameObject.SetActive(false);
     }
 
     private void BeginStage()
@@ -134,6 +141,7 @@ public class GameManager : MonoBehaviour
         EndGameCh = true;
         PenaltyCh = true;
         Player.StopCombat();
+        Player.RestoreFullHealth();
         SetActive(stageclearui, true);
 
         if (DataManager.Instance == null)
@@ -163,7 +171,8 @@ public class GameManager : MonoBehaviour
         yield return null;
         CurrentStageNumber++;
         stageTransitionInProgress = false;
-        BeginStage();
+        SetActive(stageclearui, false);
+        yield return StartCoroutine(ShowCountdownAndBeginStage());
     }
 
     public void EndGame()
