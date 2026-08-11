@@ -1,114 +1,154 @@
 using System;
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
 
+[RequireComponent(typeof(DeckManager), typeof(EnemyHealth), typeof(Audios))]
 public class Enemy : MonoBehaviour
 {
-    //[SerializeField] private EnemyData EnemyData;
     [SerializeField] private Text BulletText;
+
     private EnemyHealth health;
-    private Audios Audios;
-    private int randomRange;
+    private Audios audios;
     private EnemyInfo myData;
-    private float currentHp;
-    public event Action OnDie;
-    DeckManager DeckManager;
-    public int bulletid;
-    public float bulletdamage;
+    private DeckManager deckManager;
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private Color darkColor;
-    private float darkenFactor = 0.5f;
-    private float startAttack = 0f;
+    private float currentHp;
+    private float damageMultiplier = 1f;
+    private float startAttackRandomMultiplier;
+    private bool initialized;
+    private bool attackStarted;
+    private bool isDead;
 
+    public event Action<Enemy> OnDie;
 
-    void Awake()
+    private void Awake()
     {
-        Audios = GetComponent<Audios>();
+        audios = GetComponent<Audios>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = GetComponent<EnemyHealth>();
-        DeckManager = GetComponent<DeckManager>();
-        startAttack = UnityEngine.Random.Range(0.5f, 1.5f);
-        originalColor = spriteRenderer.color;
-        darkColor = new Color(
-            originalColor.r * darkenFactor,
-            originalColor.g * darkenFactor,
-            originalColor.b * darkenFactor,
-            originalColor.a
-        );
-    }
+        deckManager = GetComponent<DeckManager>();
+        startAttackRandomMultiplier = UnityEngine.Random.Range(0.5f, 1.5f);
 
-    public void Initialize(EnemyInfo info)
-    {
-        myData = info;
-        DeckManager.Initialize(myData.Bullet_Setting);
-        currentHp = myData.Enemy_HP;
-        health.UIInitialize(currentHp);
-        //Debug.Log("나의 체력은 : " + myData.Enemy_HP);
-    }
-
-
-    public void Update()
-    {
-        if (GameManager.Instance.PenaltyCh == false)
+        if (spriteRenderer != null)
         {
-            StartCoroutine(EnemyOnAttack());
-            enabled = false;
+            originalColor = spriteRenderer.color;
+            darkColor = new Color(
+                originalColor.r * 0.5f,
+                originalColor.g * 0.5f,
+                originalColor.b * 0.5f,
+                originalColor.a);
         }
     }
+
+    public bool Initialize(
+        EnemyInfo info,
+        float hpMultiplier,
+        float stageDamageMultiplier)
+    {
+        if (info == null || info.Bullet_Setting == null || info.Bullet_Setting.Length == 0)
+        {
+            Debug.LogError("적 초기화 데이터가 올바르지 않습니다.", this);
+            return false;
+        }
+
+        myData = info;
+        damageMultiplier = Mathf.Max(0f, stageDamageMultiplier);
+        deckManager.Initialize(myData.Bullet_Setting);
+        currentHp = myData.Enemy_HP * Mathf.Max(0.01f, hpMultiplier);
+        health.UIInitialize(currentHp);
+        UpdateBulletText();
+        initialized = true;
+        return true;
+    }
+
+    private void Update()
+    {
+        if (!initialized || attackStarted || GameManager.Instance == null)
+        {
+            return;
+        }
+
+        if (!GameManager.Instance.PenaltyCh && !GameManager.Instance.EndGameCh)
+        {
+            attackStarted = true;
+            StartCoroutine(EnemyOnAttack());
+        }
+    }
+
     private IEnumerator EnemyOnAttack()
     {
-        yield return new WaitForSeconds(myData.Enemy_Start_Shot*startAttack);
-        while (true)
+        yield return new WaitForSeconds(
+            myData.Enemy_Start_Shot * startAttackRandomMultiplier);
+
+        while (!isDead && GameManager.Instance != null && !GameManager.Instance.EndGameCh)
         {
-            if (GameManager.Instance.EndGameCh == true)
+            if (deckManager.CylinderList.Count == 0)
             {
-                break;
-            }
-            if (DeckManager.CylinderList.Count == 0)
-            {
-                DeckManager.ReloadBullet();
-                Audios.PlayReload();
-                Debug.Log("적 재장전 중");
-                BulletText.text = $"Reloadig...";
+                deckManager.ReloadBullet();
+                if (deckManager.CylinderList.Count == 0)
+                {
+                    yield break;
+                }
+
+                audios.PlayReload();
+                SetBulletText("Reloading...");
                 yield return new WaitForSeconds(1.25f);
-                BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
+
+                if (GameManager.Instance == null || GameManager.Instance.EndGameCh)
+                {
+                    yield break;
+                }
+
+                UpdateBulletText();
             }
 
-            //Debug.Log
-            //    ("공격! 탕! \n 실린더 : " + DeckManager.CylinderList.Count + " 덱 : " + DeckManager.DeckList.Count + " 사용된 : " + DeckManager.UsedList.Count); ;
             EnemyAttack();
-            Audios.PlayShot();
-            DeckManager.ShotBullet();
-            BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
+            audios.PlayShot();
+            deckManager.ShotBullet();
+            UpdateBulletText();
             yield return new WaitForSeconds(myData.Enemy_Delay);
         }
-        //Debug.Log("게임이 종료되었습니다.");
-
     }
 
-    public void EnemyAttack()
+    private void EnemyAttack()
     {
-        bulletid = DeckManager.CylinderList[0];
-        BulletDataSC.BulletInfo info = DataManager.Instance.GetBulletInfo(bulletid);
-        bulletdamage = info.BulletDamage;
+        if (deckManager.CylinderList.Count == 0 || PlayerSC.Instance == null ||
+            DataManager.Instance == null)
+        {
+            return;
+        }
 
+        int bulletId = deckManager.CylinderList[0];
+        if (!DataManager.Instance.TryGetBulletInfo(
+                bulletId,
+                out BulletDataSC.BulletInfo info))
+        {
+            return;
+        }
 
-        PlayerSC.Instance.Playertakedamage(bulletdamage);
-
-
+        float finalDamage = info.BulletDamage * damageMultiplier;
+        PlayerSC.Instance.Playertakedamage(finalDamage);
     }
 
-    public void Enemytakedamage(float attackdamage)
+    public void Enemytakedamage(float attackDamage)
     {
-        currentHp -= attackdamage;
-        health.UpdateHPBar(currentHp);
-        StartCoroutine(Darken());
-        Debug.Log("으앙 (현재 체력 : " + currentHp + " ) " );
-        if(currentHp <= 0)
+        if (isDead)
+        {
+            return;
+        }
+
+        currentHp -= attackDamage;
+        health.UpdateHPBar(Mathf.Max(0f, currentHp));
+
+        if (spriteRenderer != null)
+        {
+            StartCoroutine(Darken());
+        }
+
+        if (currentHp <= 0f)
         {
             Die();
         }
@@ -124,17 +164,29 @@ public class Enemy : MonoBehaviour
             yield return new WaitForSeconds(0.0625f);
         }
     }
-        //isT
 
-    public void Die()
+    private void Die()
     {
-        GameManager.Instance.EnemyDie();
-        OnDie?.Invoke();
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        OnDie?.Invoke(this);
         Destroy(gameObject);
     }
 
-    //1. 플레이어SC 참조
-    //2. 공격 처리 && 자동 공격
-    //3. 피격 매서드
-    //4. 사망 처리
+    private void UpdateBulletText()
+    {
+        SetBulletText($"{deckManager.CylinderList.Count} / {DeckManager.CylinderCapacity}");
+    }
+
+    private void SetBulletText(string value)
+    {
+        if (BulletText != null)
+        {
+            BulletText.text = value;
+        }
+    }
 }

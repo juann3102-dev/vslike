@@ -16,6 +16,12 @@ MonoBehaviour:
   - id: 0
     BulletName: NormalBullet
     BulletDamage: 2.5
+    Rarity: 0
   - id: 1
     BulletName: HardBullet
     BulletDamage: 5
+    Rarity: 1
+  - id: 2
+    BulletName: SuperBullet
+    BulletDamage: 20
+    Rarity: 2

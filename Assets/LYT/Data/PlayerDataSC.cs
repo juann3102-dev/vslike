@@ -1,17 +1,13 @@
-using NUnit.Framework;
-using UnityEngine;
+using System;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
-using UnityEditor.ShaderGraph.Internal;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "Data/Player")]
-
 public class PlayerDataSC : ScriptableObject
 {
+    public List<PlayerInfo> PlayerList = new List<PlayerInfo>();
 
-    public List<PlayerInfo> PlayerList;
-
-    [System.Serializable]
+    [Serializable]
     public class PlayerInfo
     {
         public float HP;
@@ -20,5 +16,4 @@ public class PlayerDataSC : ScriptableObject
         public float attack_magnification;
         public int[] Bullet_Setting = new int[15];
     }
-
 }

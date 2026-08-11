@@ -4,56 +4,113 @@ using UnityEngine;
 public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { get; private set; }
+
     [Header("Data References")]
     [SerializeField] private BulletDataSC bulletdata;
-    private Dictionary<int, BulletDataSC.BulletInfo> bulletInfoDict;
+
+    private readonly Dictionary<int, BulletDataSC.BulletInfo> bulletInfoDict =
+        new Dictionary<int, BulletDataSC.BulletInfo>();
 
     private void Awake()
     {
-        // 싱글톤 중복 방지 및 유지 설정
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            InitData();
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        InitData();
     }
 
     private void InitData()
     {
-        bulletInfoDict = new Dictionary<int, BulletDataSC.BulletInfo>();
+        bulletInfoDict.Clear();
 
         if (bulletdata == null || bulletdata.BulletList == null)
         {
-            Debug.LogError("BulletData가 할당되지 않았습니다!");
+            Debug.LogError("BulletData가 할당되지 않았습니다.", this);
             return;
         }
 
-        // 딕셔너리에 캐싱하여 조회 성능 최적화 (O(1))
-        foreach (var info in bulletdata.BulletList)
+        foreach (BulletDataSC.BulletInfo info in bulletdata.BulletList)
         {
-            if (!bulletInfoDict.ContainsKey(info.id))
+            if (info == null)
             {
-                bulletInfoDict.Add(info.id, info);
+                continue;
+            }
+
+            if (!bulletInfoDict.TryAdd(info.id, info))
+            {
+                Debug.LogError($"중복된 총알 ID입니다. ID={info.id}", bulletdata);
             }
         }
     }
 
-    /// <summary>
-    /// ID로 BulletInfo 정보 가져오기
-    /// </summary>
-    public BulletDataSC.BulletInfo GetBulletInfo(int id)
+    public bool TryGetBulletInfo(int id, out BulletDataSC.BulletInfo info)
     {
-        if (bulletInfoDict.TryGetValue(id, out var info))
+        if (bulletInfoDict.TryGetValue(id, out info))
         {
-            return info;
+            return true;
         }
 
-        Debug.LogWarning($"[DataManager] ID {id}에 해당하는 BulletInfo가 없습니다.");
-        return null;
+        Debug.LogWarning($"등록되지 않은 총알 ID입니다. ID={id}", this);
+        return false;
+    }
+
+    public List<BulletDataSC.BulletInfo> GetRewardChoices(int requestedCount)
+    {
+        List<BulletDataSC.BulletInfo> available =
+            new List<BulletDataSC.BulletInfo>(bulletInfoDict.Values);
+        List<BulletDataSC.BulletInfo> choices =
+            new List<BulletDataSC.BulletInfo>();
+
+        int choiceCount = Mathf.Min(requestedCount, available.Count);
+        while (choices.Count < choiceCount)
+        {
+            BulletRarity rarity = DrawAvailableRarity(available);
+            List<BulletDataSC.BulletInfo> rarityPool = available.FindAll(
+                bullet => bullet.Rarity == rarity);
+
+            if (rarityPool.Count == 0)
+            {
+                break;
+            }
+
+            BulletDataSC.BulletInfo selected =
+                rarityPool[Random.Range(0, rarityPool.Count)];
+            choices.Add(selected);
+            available.Remove(selected);
+        }
+
+        return choices;
+    }
+
+    private static BulletRarity DrawAvailableRarity(
+        List<BulletDataSC.BulletInfo> available)
+    {
+        bool hasCommon = available.Exists(bullet => bullet.Rarity == BulletRarity.Common);
+        bool hasRare = available.Exists(bullet => bullet.Rarity == BulletRarity.Rare);
+        bool hasEpic = available.Exists(bullet => bullet.Rarity == BulletRarity.Epic);
+
+        float commonWeight = hasCommon ? 70f : 0f;
+        float rareWeight = hasRare ? 25f : 0f;
+        float epicWeight = hasEpic ? 5f : 0f;
+        float totalWeight = commonWeight + rareWeight + epicWeight;
+        float roll = Random.Range(0f, totalWeight);
+
+        if (roll < commonWeight)
+        {
+            return BulletRarity.Common;
+        }
+
+        roll -= commonWeight;
+        if (roll < rareWeight)
+        {
+            return BulletRarity.Rare;
+        }
+
+        return BulletRarity.Epic;
     }
 }

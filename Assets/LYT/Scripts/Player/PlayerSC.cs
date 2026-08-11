@@ -1,167 +1,215 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(DeckManager), typeof(PlayerHP), typeof(Audios))]
 public class PlayerSC : MonoBehaviour
 {
     [Header("Data Source")]
-    [SerializeField] private PlayerDataSC PlayerData; // ScriptableObject 원본 데이터
+    [SerializeField] private PlayerDataSC PlayerData;
     [SerializeField] private Text BulletText;
+    [SerializeField] private float penaltyWait = 1.25f;
+
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private Color darkColor;
-    private float darkenFactor = 0.5f;
-    private Audios Audios; 
-    private DeckManager DeckManager;
-    private Enemy enemy;
-    private PlayerHP PlayerHP;
-    private int bulletid;
-    private float attackdamage;
-    private bool isInputBlocked;
-    private bool isTakeDamage=false;
-    public float penaltyWait = 1.25f;
-    private float PlayerHp;
-
+    private Audios audios;
+    private DeckManager deckManager;
+    private Enemy targetEnemy;
+    private PlayerHP playerHP;
+    private Coroutine attackCoroutine;
+    private bool isAttacking;
+    private bool isTakingDamage;
+    private bool isDead;
+    private float playerHp;
 
     public static PlayerSC Instance { get; private set; }
+    public float CurrentHp => playerHp;
+    public DeckManager Deck => deckManager;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         spriteRenderer = GetComponent<SpriteRenderer>();
-        DeckManager = GetComponent<DeckManager>();
-        Audios = GetComponent<Audios>();
-        PlayerHP = GetComponent<PlayerHP>();
-        DeckManager.Initialize(PlayerData.PlayerList[0].Bullet_Setting);
-        PlayerHp = PlayerData.PlayerList[0].HP;
-        originalColor = spriteRenderer.color;
-        //if (attackCompo == null) attackCompo = GetComponent<Attack>();
+        deckManager = GetComponent<DeckManager>();
+        audios = GetComponent<Audios>();
+        playerHP = GetComponent<PlayerHP>();
+
+        if (PlayerData == null || PlayerData.PlayerList == null || PlayerData.PlayerList.Count == 0)
+        {
+            Debug.LogError("PlayerData가 비어 있습니다.", this);
+            enabled = false;
+            return;
+        }
+
+        PlayerDataSC.PlayerInfo playerInfo = PlayerData.PlayerList[0];
+        deckManager.Initialize(playerInfo.Bullet_Setting);
+        playerHp = playerInfo.HP;
+
+        if (spriteRenderer != null)
+        {
+            originalColor = spriteRenderer.color;
+            darkColor = new Color(
+                originalColor.r * 0.5f,
+                originalColor.g * 0.5f,
+                originalColor.b * 0.5f,
+                originalColor.a);
+        }
     }
 
     private void Start()
     {
-        darkColor = new Color(
-            originalColor.r * darkenFactor,
-            originalColor.g * darkenFactor,
-            originalColor.b * darkenFactor,
-            originalColor.a
-        );
-        penaltyWait = 1.25f;
-        PlayerHP.UIInitialize(PlayerHp);
-
+        playerHP.UIInitialize(playerHp);
+        UpdateBulletText();
     }
 
-
-public void Update()
+    private void Update()
     {
-        if(isInputBlocked)
+        if (isDead || isAttacking || GameManager.Instance == null ||
+            GameManager.Instance.EndGameCh || GameManager.Instance.PenaltyCh)
         {
             return;
         }
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        { 
-            if(GameManager.Instance.PenaltyCh == true)
-            {
-                StartCoroutine(PenaltyRoutine());
-                Debug.Log("패널티!" + isInputBlocked);
-            }
-            else if (GameManager.Instance.PenaltyCh == false)
-            {
-                Debug.Log("공격 시작!" + isInputBlocked);
-                StartCoroutine(AttackOn());
-                enabled = false;
-            }
-        }
 
-    }
-
-    private IEnumerator AttackOn()
-    {
-        while (true)
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            if (GameManager.Instance.EndGameCh == true)
-            {
-                break;
-            }
-            if (DeckManager.CylinderList.Count == 0)
-            {
-                DeckManager.ReloadBullet();
-                Audios.PlayReload();
-                Debug.Log("재장전 중");
-                BulletText.text = $"Reloadig";
-                yield return new WaitForSeconds(1.25f);
-                BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
-            }
-
-            Debug.Log
-                ("공격! 탕! \n 실린더 : " + DeckManager.CylinderList.Count + " 덱 : " + DeckManager.DeckList.Count + " 사용된 : " + DeckManager.UsedList.Count); ;
-            PlayerAttack();
-            Audios.PlayShot();
-            DeckManager.ShotBullet();
-            BulletText.text = $"{DeckManager.CylinderList.Count} / 6";
-            yield return new WaitForSeconds(PlayerData.PlayerList[0].Shot_Delay);
+            isAttacking = true;
+            attackCoroutine = StartCoroutine(AttackLoop());
         }
-        Debug.Log("게임이 종료되었습니다.");
     }
 
-
-
-    private IEnumerator PenaltyRoutine()
+    private IEnumerator AttackLoop()
     {
-        isInputBlocked = true; // 입력 차단 시작
+        while (!isDead && GameManager.Instance != null && !GameManager.Instance.EndGameCh)
+        {
+            if (deckManager.CylinderList.Count == 0)
+            {
+                deckManager.ReloadBullet();
+                if (deckManager.CylinderList.Count == 0)
+                {
+                    break;
+                }
 
-        // (선택 사항) 패널티 연출 - UI 쿨타임 표시, 경고 사운드, 캐릭터 붉은색 변경 등
+                audios.PlayReload();
+                SetBulletText("Reloading...");
+                yield return new WaitForSeconds(penaltyWait);
+                UpdateBulletText();
 
-        yield return new WaitForSeconds(penaltyWait); // 1.25초 대기
+                if (GameManager.Instance.EndGameCh)
+                {
+                    break;
+                }
+            }
 
-        isInputBlocked = false; // 입력 차단 해제
+            if (targetEnemy == null)
+            {
+                changetarget();
+            }
+
+            if (TryAttackCurrentTarget())
+            {
+                audios.PlayShot();
+                deckManager.ShotBullet();
+                UpdateBulletText();
+                yield return new WaitForSeconds(PlayerData.PlayerList[0].Shot_Delay);
+            }
+            else
+            {
+                yield return null;
+            }
+        }
+
+        isAttacking = false;
+        attackCoroutine = null;
     }
 
+    public void PrepareForStage()
+    {
+        StopCombat();
+        targetEnemy = null;
+        deckManager.PrepareForNextStage();
+        UpdateBulletText();
+    }
 
+    public void StopCombat()
+    {
+        if (attackCoroutine != null)
+        {
+            StopCoroutine(attackCoroutine);
+            attackCoroutine = null;
+        }
+
+        isAttacking = false;
+    }
+
+    public void AddBulletToDeck(int bulletId)
+    {
+        deckManager.AddBullet(bulletId);
+    }
 
     public void changetarget()
     {
-        if (GameManager.Instance.StageManager.EnemyList.Count == 0)
+        targetEnemy = null;
+
+        if (GameManager.Instance == null || GameManager.Instance.StageManager == null)
         {
-            Debug.Log("더 이상 적이 없습니다.");
+            return;
         }
-        else
+
+        foreach (Enemy enemy in GameManager.Instance.StageManager.EnemyList)
         {
-            enemy = GameManager.Instance.StageManager.EnemyList[0].GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                targetEnemy = enemy;
+                break;
+            }
         }
     }
 
-    public void PlayerAttack()
+    private bool TryAttackCurrentTarget()
     {
-        bulletid = DeckManager.CylinderList[0];
-        BulletDataSC.BulletInfo info = DataManager.Instance.GetBulletInfo(bulletid);
-        attackdamage = info.BulletDamage;
-
-        //Debug.Log("공격 데미지는 : " + attackdamage);
-        if (enemy != null)
+        if (targetEnemy == null || deckManager.CylinderList.Count == 0 ||
+            DataManager.Instance == null)
         {
-            enemy.Enemytakedamage(attackdamage);
-        }
-        else
-        {
-            Debug.LogWarning("공격할 적(enemy)이 지정되지 않았습니다!");
+            return false;
         }
 
+        int bulletId = deckManager.CylinderList[0];
+        if (!DataManager.Instance.TryGetBulletInfo(
+                bulletId,
+                out BulletDataSC.BulletInfo info))
+        {
+            return false;
+        }
+
+        float attackMultiplier = Mathf.Max(0f, PlayerData.PlayerList[0].attack_magnification);
+        targetEnemy.Enemytakedamage(info.BulletDamage * attackMultiplier);
+        return true;
     }
 
-    public void Playertakedamage(float attackdamage)
+    public void Playertakedamage(float attackDamage)
     {
-        PlayerHp -= attackdamage;
-        PlayerHP.UpdateHPBar(PlayerHp);
-        if (isTakeDamage == false)
+        if (isDead)
+        {
+            return;
+        }
+
+        playerHp -= attackDamage;
+        playerHP.UpdateHPBar(Mathf.Max(0f, playerHp));
+
+        if (!isTakingDamage && spriteRenderer != null)
         {
             StartCoroutine(Darken());
         }
-    
-        Debug.Log("플레이어 피격! (현재 체력 : " + PlayerHp + " ) ");
-        if (PlayerHp <= 0)
+
+        if (playerHp <= 0f)
         {
             Die();
         }
@@ -169,7 +217,7 @@ public void Update()
 
     private IEnumerator Darken()
     {
-        //isTakeDamage = true;
+        isTakingDamage = true;
         for (int i = 0; i < 2; i++)
         {
             spriteRenderer.color = darkColor;
@@ -177,17 +225,32 @@ public void Update()
             spriteRenderer.color = originalColor;
             yield return new WaitForSeconds(0.0625f);
         }
-        //isTakeDamage = false;
+
+        isTakingDamage = false;
     }
 
-    public void Die()
+    private void Die()
     {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+        StopCombat();
         GameManager.Instance.PlayerDie();
     }
 
-    //타겟 지정
-    //공격 매서드
-    //사망 처리
-    //피격 처리
+    private void UpdateBulletText()
+    {
+        SetBulletText($"{deckManager.CylinderList.Count} / {DeckManager.CylinderCapacity}");
+    }
 
+    private void SetBulletText(string value)
+    {
+        if (BulletText != null)
+        {
+            BulletText.text = value;
+        }
+    }
 }

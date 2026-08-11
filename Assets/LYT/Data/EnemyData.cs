@@ -1,18 +1,46 @@
-using NUnit.Framework;
-using UnityEngine;
+using System;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
-using UnityEditor.ShaderGraph.Internal;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "Data/Enemy")]
-
 public class EnemyData : ScriptableObject
 {
+    public List<EnemyInfo> EnemyList = new List<EnemyInfo>();
 
-    public List<EnemyInfo> EnemyList;
+    public int MaxEnemyId
+    {
+        get
+        {
+            int maxId = -1;
+            foreach (EnemyInfo info in EnemyList)
+            {
+                if (info != null && info.Enemy_ID > maxId)
+                {
+                    maxId = info.Enemy_ID;
+                }
+            }
 
+            return maxId;
+        }
+    }
+
+    public bool TryGetEnemyInfo(int id, out EnemyInfo result)
+    {
+        foreach (EnemyInfo info in EnemyList)
+        {
+            if (info != null && info.Enemy_ID == id)
+            {
+                result = info;
+                return true;
+            }
+        }
+
+        result = null;
+        return false;
+    }
 }
-[System.Serializable]
+
+[Serializable]
 public class EnemyInfo
 {
     public string name;

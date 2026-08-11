@@ -449,8 +449,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   BulletText: {fileID: 1818779844973966075}
-  bulletid: 0
-  bulletdamage: 0
 --- !u!114 &7535870009842834483
 MonoBehaviour:
   m_ObjectHideFlags: 0

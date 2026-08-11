@@ -322,8 +322,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StageManager
   EnemyData: {fileID: 11400000, guid: 1ac82db8378cedf49a8561b15792f6c0, type: 2}
+  StageData: {fileID: 11400000, guid: 8e4d431a6e6b4f04b9f0b96c6cd3d7a2, type: 2}
   PlayerSC: {fileID: 1890922186}
-  randomCount: 0
   SpawnPoint:
   - {fileID: 1337296158}
   - {fileID: 1666112419}
