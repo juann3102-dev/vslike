@@ -15,7 +15,7 @@ public class StageManager : MonoBehaviour
     void Start()
     {
         //randomCount = UnityEngine.Random.Range(0, 2);
-        randomCount = UnityEngine.Random.Range(0,2);
+        randomCount = UnityEngine.Random.Range(0,3);
         for (int i = 0; i <= randomCount; i++)
         {
             Enemy_Spawn(i);

@@ -17,10 +17,10 @@ public class PlayerSC : MonoBehaviour
     private DeckManager DeckManager;
     private Enemy enemy;
     private PlayerHP PlayerHP;
-    public int bulletid;
-    public float attackdamage;
-    public bool isInputBlocked;
-    public bool isTakeDamage=false;
+    private int bulletid;
+    private float attackdamage;
+    private bool isInputBlocked;
+    private bool isTakeDamage=false;
     public float penaltyWait = 1.25f;
     private float PlayerHp;
 

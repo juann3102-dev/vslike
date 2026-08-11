@@ -10,7 +10,9 @@ public class GameManager : MonoBehaviour
     public bool PenaltyCh;
     public bool StageClear;
     public bool GameOver;
+    public int countdown;
     private int enemyCount;
+
     public PlayerSC Player { get; private set; }
     [field: SerializeField] public StageManager StageManager { get; private set; }
     [SerializeField] private Text countdownText;
@@ -44,7 +46,7 @@ public class GameManager : MonoBehaviour
     {
         countdownText.gameObject.SetActive(true);
 
-        for (int i = 3; i > 0; i--)
+        for (int i = countdown; i > 0; i--)
         {
             countdownText.text = i.ToString();
             yield return new WaitForSeconds(1f);

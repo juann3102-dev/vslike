@@ -17,11 +17,11 @@ MonoBehaviour:
     Enemy_ID: 0
     Enemy_HP: 25
     Enemy_Delay: 1.25
-    Enemy_Stat_Shot: 1
+    Enemy_Start_Shot: 1
     Bullet_Setting: 01000000000000000000000000000000000000000000000000000000000000000000000000000000
   - name: "\uAC31\uB2E8 \uB450\uBAA9"
     Enemy_ID: 1
     Enemy_HP: 35
     Enemy_Delay: 1.25
-    Enemy_Stat_Shot: 1
+    Enemy_Start_Shot: 1
     Bullet_Setting: 01000000010000000000000000000000000000000000000000000000000000000000000000000000

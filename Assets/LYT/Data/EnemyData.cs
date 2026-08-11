@@ -19,6 +19,6 @@ public class EnemyInfo
     public int Enemy_ID;
     public float Enemy_HP;
     public float Enemy_Delay;
-    public float Enemy_Stat_Shot;
+    public float Enemy_Start_Shot;
     public int[] Bullet_Setting = new int[5];
 }

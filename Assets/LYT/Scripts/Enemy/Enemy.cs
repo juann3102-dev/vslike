@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using System.Collections.Generic;
 using UnityEngine.UIElements;
 
 public class Enemy : MonoBehaviour
@@ -21,6 +22,7 @@ public class Enemy : MonoBehaviour
     private Color originalColor;
     private Color darkColor;
     private float darkenFactor = 0.5f;
+    private float startAttack = 0f;
 
 
     void Awake()
@@ -28,6 +30,8 @@ public class Enemy : MonoBehaviour
         Audios = GetComponent<Audios>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = GetComponent<EnemyHealth>();
+        DeckManager = GetComponent<DeckManager>();
+        startAttack = UnityEngine.Random.Range(0.5f, 1.5f);
         originalColor = spriteRenderer.color;
         darkColor = new Color(
             originalColor.r * darkenFactor,
@@ -40,7 +44,6 @@ public class Enemy : MonoBehaviour
     public void Initialize(EnemyInfo info)
     {
         myData = info;
-        DeckManager = GetComponent<DeckManager>();
         DeckManager.Initialize(myData.Bullet_Setting);
         currentHp = myData.Enemy_HP;
         health.UIInitialize(currentHp);
@@ -58,7 +61,7 @@ public class Enemy : MonoBehaviour
     }
     private IEnumerator EnemyOnAttack()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(myData.Enemy_Start_Shot*startAttack);
         while (true)
         {
             if (GameManager.Instance.EndGameCh == true)
