@@ -1,6 +1,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum BulletRewardAction
+{
+    AddBullet,
+    RemoveBullet
+}
+
+public sealed class BulletRewardChoice
+{
+    public BulletRewardAction Action { get; }
+    public BulletDataSC.BulletInfo Bullet { get; }
+
+    public BulletRewardChoice(
+        BulletRewardAction action,
+        BulletDataSC.BulletInfo bullet = null)
+    {
+        Action = action;
+        Bullet = bullet;
+    }
+}
+
+public sealed class OwnedBulletChoice
+{
+    public BulletDataSC.BulletInfo Bullet { get; }
+    public int Count { get; }
+
+    public OwnedBulletChoice(BulletDataSC.BulletInfo bullet, int count)
+    {
+        Bullet = bullet;
+        Count = count;
+    }
+}
+
 public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { get; private set; }
@@ -59,34 +91,48 @@ public class DataManager : MonoBehaviour
         return false;
     }
 
-    public List<BulletDataSC.BulletInfo> GetRewardChoices(int requestedCount)
+    public List<BulletRewardChoice> GetRewardChoices(int requestedCount)
     {
         List<BulletDataSC.BulletInfo> available =
             new List<BulletDataSC.BulletInfo>(bulletInfoDict.Values);
-        List<BulletDataSC.BulletInfo> choices =
-            new List<BulletDataSC.BulletInfo>();
+        List<BulletRewardChoice> choices = new List<BulletRewardChoice>();
 
         int choiceCount = Mathf.Max(0, requestedCount);
         while (choices.Count < choiceCount)
         {
-            BulletRarity rarity = DrawAvailableRarity(available);
-            List<BulletDataSC.BulletInfo> rarityPool = available.FindAll(
-                bullet => bullet.Rarity == rarity);
-
-            if (rarityPool.Count == 0)
-            {
-                break;
-            }
-
-            BulletDataSC.BulletInfo selected =
-                rarityPool[Random.Range(0, rarityPool.Count)];
-            choices.Add(selected);
+            choices.Add(DrawRewardChoice(available));
         }
 
         return choices;
     }
 
-    private static BulletRarity DrawAvailableRarity(
+    public List<OwnedBulletChoice> GetOwnedBulletChoices(
+        Dictionary<int, int> bulletCounts)
+    {
+        List<OwnedBulletChoice> choices = new List<OwnedBulletChoice>();
+        if (bulletCounts == null)
+        {
+            return choices;
+        }
+
+        List<int> ids = new List<int>(bulletCounts.Keys);
+        ids.Sort();
+
+        foreach (int id in ids)
+        {
+            if (bulletCounts[id] <= 0 ||
+                !TryGetBulletInfo(id, out BulletDataSC.BulletInfo info))
+            {
+                continue;
+            }
+
+            choices.Add(new OwnedBulletChoice(info, bulletCounts[id]));
+        }
+
+        return choices;
+    }
+
+    private static BulletRewardChoice DrawRewardChoice(
         List<BulletDataSC.BulletInfo> available)
     {
         bool hasCommon = available.Exists(bullet => bullet.Rarity == BulletRarity.Common);
@@ -94,22 +140,40 @@ public class DataManager : MonoBehaviour
         bool hasEpic = available.Exists(bullet => bullet.Rarity == BulletRarity.Epic);
 
         float commonWeight = hasCommon ? 70f : 0f;
-        float rareWeight = hasRare ? 25f : 0f;
+        float rareWeight = hasRare ? 20f : 0f;
         float epicWeight = hasEpic ? 5f : 0f;
-        float totalWeight = commonWeight + rareWeight + epicWeight;
+        const float removalWeight = 5f;
+        float totalWeight = commonWeight + rareWeight + epicWeight + removalWeight;
         float roll = Random.Range(0f, totalWeight);
 
         if (roll < commonWeight)
         {
-            return BulletRarity.Common;
+            return CreateBulletChoice(available, BulletRarity.Common);
         }
 
         roll -= commonWeight;
         if (roll < rareWeight)
         {
-            return BulletRarity.Rare;
+            return CreateBulletChoice(available, BulletRarity.Rare);
         }
 
-        return BulletRarity.Epic;
+        roll -= rareWeight;
+        if (roll < epicWeight)
+        {
+            return CreateBulletChoice(available, BulletRarity.Epic);
+        }
+
+        return new BulletRewardChoice(BulletRewardAction.RemoveBullet);
+    }
+
+    private static BulletRewardChoice CreateBulletChoice(
+        List<BulletDataSC.BulletInfo> available,
+        BulletRarity rarity)
+    {
+        List<BulletDataSC.BulletInfo> rarityPool = available.FindAll(
+            bullet => bullet.Rarity == rarity);
+        BulletDataSC.BulletInfo selected =
+            rarityPool[Random.Range(0, rarityPool.Count)];
+        return new BulletRewardChoice(BulletRewardAction.AddBullet, selected);
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -187,6 +188,22 @@ public class PlayerSC : MonoBehaviour
     public void AddBulletToDeck(int bulletId)
     {
         deckManager.AddBullet(bulletId);
+    }
+
+    public Dictionary<int, int> GetOwnedBulletCounts()
+    {
+        return deckManager.GetBulletCounts();
+    }
+
+    public bool RemoveBulletFromDeck(int bulletId)
+    {
+        bool removed = deckManager.RemoveBullet(bulletId);
+        if (removed)
+        {
+            UpdateBulletText();
+        }
+
+        return removed;
     }
 
     public void RestoreFullHealth()

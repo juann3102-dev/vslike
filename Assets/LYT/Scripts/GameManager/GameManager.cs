@@ -24,6 +24,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject stageclearui;
 
     private BulletRewardUI rewardUI;
+    private Text stageText;
     private bool stageTransitionInProgress;
 
     private void Awake()
@@ -58,6 +59,8 @@ public class GameManager : MonoBehaviour
         GameOver = false;
         SetActive(gameoverui, false);
         SetActive(stageclearui, false);
+        EnsureStageText();
+        UpdateStageText();
         StageManager.Initialize(this);
         StartCoroutine(StartRun());
     }
@@ -151,16 +154,34 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        List<BulletDataSC.BulletInfo> choices =
+        List<BulletRewardChoice> choices =
             DataManager.Instance.GetRewardChoices(3);
-        rewardUI.Show(CurrentStageNumber, choices, CompleteReward);
+        List<OwnedBulletChoice> ownedBullets =
+            DataManager.Instance.GetOwnedBulletChoices(
+                Player.GetOwnedBulletCounts());
+        rewardUI.Show(
+            CurrentStageNumber,
+            choices,
+            ownedBullets,
+            CompleteReward);
     }
 
-    private void CompleteReward(BulletDataSC.BulletInfo selectedBullet)
+    private void CompleteReward(BulletRewardChoice selectedChoice)
     {
-        if (selectedBullet != null)
+        if (selectedChoice != null &&
+            selectedChoice.Action == BulletRewardAction.AddBullet &&
+            selectedChoice.Bullet != null)
         {
-            Player.AddBulletToDeck(selectedBullet.id);
+            Player.AddBulletToDeck(selectedChoice.Bullet.id);
+        }
+        else if (selectedChoice != null &&
+                 selectedChoice.Action == BulletRewardAction.RemoveBullet &&
+                 selectedChoice.Bullet != null &&
+                 !Player.RemoveBulletFromDeck(selectedChoice.Bullet.id))
+        {
+            Debug.LogWarning(
+                $"제거할 총알을 찾지 못했습니다. ID={selectedChoice.Bullet.id}",
+                this);
         }
 
         StartCoroutine(StartNextStage());
@@ -170,6 +191,7 @@ public class GameManager : MonoBehaviour
     {
         yield return null;
         CurrentStageNumber++;
+        UpdateStageText();
         stageTransitionInProgress = false;
         SetActive(stageclearui, false);
         yield return StartCoroutine(ShowCountdownAndBeginStage());
@@ -204,6 +226,60 @@ public class GameManager : MonoBehaviour
         if (target != null)
         {
             target.SetActive(value);
+        }
+    }
+
+    private void EnsureStageText()
+    {
+        if (stageText != null)
+        {
+            return;
+        }
+
+        Canvas screenCanvas = countdownText != null
+            ? countdownText.GetComponentInParent<Canvas>()
+            : null;
+        if (screenCanvas == null)
+        {
+            Debug.LogWarning("스테이지 표시를 배치할 화면 Canvas를 찾지 못했습니다.", this);
+            return;
+        }
+
+        GameObject stageTextObject = new GameObject(
+            "Stage Text",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Text),
+            typeof(Outline));
+        stageTextObject.transform.SetParent(screenCanvas.transform, false);
+
+        RectTransform rect = stageTextObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(40f, -30f);
+        rect.sizeDelta = new Vector2(500f, 80f);
+
+        stageText = stageTextObject.GetComponent<Text>();
+        stageText.font = countdownText.font != null
+            ? countdownText.font
+            : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        stageText.fontSize = 42;
+        stageText.fontStyle = FontStyle.Bold;
+        stageText.alignment = TextAnchor.UpperLeft;
+        stageText.color = Color.white;
+        stageText.raycastTarget = false;
+
+        Outline outline = stageTextObject.GetComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.8f);
+        outline.effectDistance = new Vector2(2f, -2f);
+    }
+
+    private void UpdateStageText()
+    {
+        if (stageText != null)
+        {
+            stageText.text = $"STAGE {CurrentStageNumber}";
         }
     }
 }

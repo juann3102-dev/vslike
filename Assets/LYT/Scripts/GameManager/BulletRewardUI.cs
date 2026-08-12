@@ -5,35 +5,89 @@ using UnityEngine.UI;
 
 public class BulletRewardUI : MonoBehaviour
 {
+    private const int RemovalItemsPerPage = 4;
+
     private GameObject canvasObject;
     private RectTransform panel;
     private Text titleText;
     private Font font;
     private readonly List<GameObject> generatedButtons = new List<GameObject>();
-    private Action<BulletDataSC.BulletInfo> onResolved;
+    private IReadOnlyList<BulletRewardChoice> rewardChoices;
+    private IReadOnlyList<OwnedBulletChoice> ownedBulletChoices;
+    private Action<BulletRewardChoice> onResolved;
+    private int clearedStage;
+    private int removalPage;
     private bool resolved;
 
     public void Show(
         int clearedStage,
-        IReadOnlyList<BulletDataSC.BulletInfo> choices,
-        Action<BulletDataSC.BulletInfo> callback)
+        IReadOnlyList<BulletRewardChoice> choices,
+        IReadOnlyList<OwnedBulletChoice> ownedBullets,
+        Action<BulletRewardChoice> callback)
     {
         EnsureUi();
-        ClearButtons();
         resolved = false;
+        this.clearedStage = clearedStage;
+        rewardChoices = choices;
+        ownedBulletChoices = ownedBullets;
         onResolved = callback;
-        titleText.text = $"STAGE {clearedStage} CLEAR\n총알을 선택하세요";
+        ShowRewardChoices();
+        canvasObject.SetActive(true);
+    }
 
-        int count = choices != null ? choices.Count : 0;
+    private void ShowRewardChoices()
+    {
+        ClearButtons();
+        titleText.text = $"STAGE {clearedStage} CLEAR\n보상을 선택하세요";
+
+        int count = rewardChoices != null ? rewardChoices.Count : 0;
         for (int i = 0; i < count; i++)
         {
-            BulletDataSC.BulletInfo bullet = choices[i];
+            BulletRewardChoice choice = rewardChoices[i];
             float y = 95f - i * 90f;
-            CreateChoiceButton(bullet, y);
+            CreateRewardButton(choice, y);
         }
 
         CreateSkipButton(-190f);
-        canvasObject.SetActive(true);
+    }
+
+    private void OpenRemovalChoices()
+    {
+        removalPage = 0;
+        ShowRemovalChoices();
+    }
+
+    private void ShowRemovalChoices()
+    {
+        ClearButtons();
+        int count = ownedBulletChoices != null ? ownedBulletChoices.Count : 0;
+        titleText.text = count > 0
+            ? "제거할 총알을 선택하세요\n선택한 총알 한 장이 제거됩니다"
+            : "제거할 수 있는 총알이 없습니다";
+
+        int pageCount = Mathf.Max(1, Mathf.CeilToInt(count / (float)RemovalItemsPerPage));
+        removalPage = Mathf.Clamp(removalPage, 0, pageCount - 1);
+        int startIndex = removalPage * RemovalItemsPerPage;
+        int endIndex = Mathf.Min(startIndex + RemovalItemsPerPage, count);
+
+        for (int i = startIndex; i < endIndex; i++)
+        {
+            OwnedBulletChoice ownedBullet = ownedBulletChoices[i];
+            float y = 140f - (i - startIndex) * 80f;
+            CreateRemovalTargetButton(ownedBullet, y);
+        }
+
+        if (removalPage > 0)
+        {
+            CreatePageButton("◀ 이전", -190f, -145f, removalPage - 1);
+        }
+
+        if (removalPage < pageCount - 1)
+        {
+            CreatePageButton("다음 ▶", -190f, 145f, removalPage + 1);
+        }
+
+        CreateBackButton(-280f);
     }
 
     public void Hide()
@@ -44,7 +98,7 @@ public class BulletRewardUI : MonoBehaviour
         }
     }
 
-    private void Resolve(BulletDataSC.BulletInfo selectedBullet)
+    private void Resolve(BulletRewardChoice selectedChoice)
     {
         if (resolved)
         {
@@ -53,9 +107,9 @@ public class BulletRewardUI : MonoBehaviour
 
         resolved = true;
         Hide();
-        Action<BulletDataSC.BulletInfo> callback = onResolved;
+        Action<BulletRewardChoice> callback = onResolved;
         onResolved = null;
-        callback?.Invoke(selectedBullet);
+        callback?.Invoke(selectedChoice);
     }
 
     private void EnsureUi()
@@ -86,7 +140,7 @@ public class BulletRewardUI : MonoBehaviour
         panel.anchorMin = new Vector2(0.5f, 0.5f);
         panel.anchorMax = new Vector2(0.5f, 0.5f);
         panel.pivot = new Vector2(0.5f, 0.5f);
-        panel.sizeDelta = new Vector2(720f, 560f);
+        panel.sizeDelta = new Vector2(720f, 720f);
         panel.anchoredPosition = Vector2.zero;
         panelObject.GetComponent<Image>().color = new Color(0.06f, 0.07f, 0.1f, 0.96f);
 
@@ -100,13 +154,39 @@ public class BulletRewardUI : MonoBehaviour
         canvasObject.SetActive(false);
     }
 
-    private void CreateChoiceButton(BulletDataSC.BulletInfo bullet, float y)
+    private void CreateRewardButton(BulletRewardChoice choice, float y)
     {
+        if (choice.Action == BulletRewardAction.RemoveBullet)
+        {
+            GameObject removalObject = CreateButtonObject(
+                "총알 1개 제거\n현재 덱에서 선택",
+                y,
+                new Color(0.65f, 0.3f, 0.08f, 1f));
+            removalObject.GetComponent<Button>().onClick.AddListener(OpenRemovalChoices);
+            generatedButtons.Add(removalObject);
+            return;
+        }
+
+        BulletDataSC.BulletInfo bullet = choice.Bullet;
         GameObject buttonObject = CreateButtonObject(
             $"{bullet.BulletName}\n{bullet.Rarity}  |  Damage {bullet.BulletDamage:0.##}",
             y,
             GetRarityColor(bullet.Rarity));
-        buttonObject.GetComponent<Button>().onClick.AddListener(() => Resolve(bullet));
+        buttonObject.GetComponent<Button>().onClick.AddListener(() => Resolve(choice));
+        generatedButtons.Add(buttonObject);
+    }
+
+    private void CreateRemovalTargetButton(OwnedBulletChoice ownedBullet, float y)
+    {
+        BulletDataSC.BulletInfo bullet = ownedBullet.Bullet;
+        GameObject buttonObject = CreateButtonObject(
+            $"{bullet.BulletName}  × {ownedBullet.Count}\n{bullet.Rarity}  |  Damage {bullet.BulletDamage:0.##}",
+            y,
+            GetRarityColor(bullet.Rarity));
+        buttonObject.GetComponent<Button>().onClick.AddListener(
+            () => Resolve(new BulletRewardChoice(
+                BulletRewardAction.RemoveBullet,
+                bullet)));
         generatedButtons.Add(buttonObject);
     }
 
@@ -120,7 +200,38 @@ public class BulletRewardUI : MonoBehaviour
         generatedButtons.Add(buttonObject);
     }
 
-    private GameObject CreateButtonObject(string label, float y, Color color)
+    private void CreateBackButton(float y)
+    {
+        GameObject buttonObject = CreateButtonObject(
+            "뒤로",
+            y,
+            new Color(0.25f, 0.25f, 0.28f, 1f));
+        buttonObject.GetComponent<Button>().onClick.AddListener(ShowRewardChoices);
+        generatedButtons.Add(buttonObject);
+    }
+
+    private void CreatePageButton(string label, float y, float x, int page)
+    {
+        GameObject buttonObject = CreateButtonObject(
+            label,
+            y,
+            new Color(0.2f, 0.28f, 0.4f, 1f),
+            x,
+            270f);
+        buttonObject.GetComponent<Button>().onClick.AddListener(() =>
+        {
+            removalPage = page;
+            ShowRemovalChoices();
+        });
+        generatedButtons.Add(buttonObject);
+    }
+
+    private GameObject CreateButtonObject(
+        string label,
+        float y,
+        Color color,
+        float x = 0f,
+        float width = 570f)
     {
         GameObject buttonObject = CreateUiObject(label, panel);
         Image image = buttonObject.AddComponent<Image>();
@@ -131,8 +242,8 @@ public class BulletRewardUI : MonoBehaviour
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(570f, 72f);
-        rect.anchoredPosition = new Vector2(0f, y);
+        rect.sizeDelta = new Vector2(width, 72f);
+        rect.anchoredPosition = new Vector2(x, y);
 
         Text text = CreateText("Label", rect, 25, TextAnchor.MiddleCenter);
         text.color = Color.white;
@@ -174,6 +285,7 @@ public class BulletRewardUI : MonoBehaviour
         {
             if (button != null)
             {
+                button.SetActive(false);
                 Destroy(button);
             }
         }

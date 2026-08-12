@@ -74,6 +74,30 @@ public class DeckManager : MonoBehaviour
         return DeckList.Count + CylinderList.Count + UsedList.Count;
     }
 
+    public Dictionary<int, int> GetBulletCounts()
+    {
+        Dictionary<int, int> counts = new Dictionary<int, int>();
+        AddCounts(DeckList, counts);
+        AddCounts(CylinderList, counts);
+        AddCounts(UsedList, counts);
+        return counts;
+    }
+
+    public bool RemoveBullet(int bulletId)
+    {
+        if (DeckList.Remove(bulletId))
+        {
+            return true;
+        }
+
+        if (UsedList.Remove(bulletId))
+        {
+            return true;
+        }
+
+        return CylinderList.Remove(bulletId);
+    }
+
     private void RecycleUsedBullets()
     {
         if (UsedList.Count == 0)
@@ -84,6 +108,23 @@ public class DeckManager : MonoBehaviour
         DeckList.AddRange(UsedList);
         UsedList.Clear();
         ShuffleDeck();
+    }
+
+    private static void AddCounts(
+        List<int> source,
+        Dictionary<int, int> counts)
+    {
+        foreach (int bulletId in source)
+        {
+            if (counts.TryGetValue(bulletId, out int count))
+            {
+                counts[bulletId] = count + 1;
+            }
+            else
+            {
+                counts.Add(bulletId, 1);
+            }
+        }
     }
 
     private void ShuffleDeck()

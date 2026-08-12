@@ -25,3 +25,19 @@ MonoBehaviour:
     BulletName: SuperBullet
     BulletDamage: 20
     Rarity: 2
+  - id: 3
+    BulletName: Normal+Bullet
+    BulletDamage: 3
+    Rarity: 0
+  - id: 4
+    BulletName: TrashBullet
+    BulletDamage: 1
+    Rarity: 0
+  - id: 5
+    BulletName: niceBullet
+    BulletDamage: 7
+    Rarity: 1
+  - id: 6
+    BulletName: MegaBullet
+    BulletDamage: 30
+    Rarity: 2
